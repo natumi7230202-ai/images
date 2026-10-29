@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>みんなはどっち？</title>
+    <!-- 丸ゴシック系フォント読み込み -->
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic Pro", Meiryo, sans-serif;
+            background-color: #f7fbfc;
+            color: #2c3e50;
+            text-align: center;
+            margin: 0;
+            padding: 15px;
+        }
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px 20px;
+            border-radius: 24px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            border: 4px solid #74b9ff;
+            position: relative;
+        }
+        h1 {
+            color: #ff6b6b;
+            font-size: 2.2rem;
+            margin: 0 0 5px 0;
+            font-weight: 900;
+            text-shadow: 2px 2px 0px #ffeaa7;
+        }
+        .subtitle {
+            font-size: 1.1rem;
+            color: #e67e22;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+        .progress-indicator {
+            font-size: 1.1rem;
+            color: #2d3436;
+            font-weight: 800;
+            background: #ffeaa7;
+            display: inline-block;
+            padding: 6px 18px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+        }
+        .question-box {
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin: 10px 0 25px 0;
+            padding: 20px;
+            background: #dfe6e9;
+            border-radius: 16px;
+            line-height: 1.4;
+            color: #2d3436;
+            border-left: 8px solid #0984e3;
+        }
+        /* 選択肢エリア */
+        .choices-grid {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+        /* 画像選択カードのスタイル */
+        .choice-card-img {
+            background: white;
+            border: 4px solid #0984e3;
+            border-radius: 20px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 0 #074b83;
+            width: 45%;
+            min-width: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .choice-card-img:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 0 #074b83;
+            background-color: #f0f8ff;
+        }
+        .choice-card-img:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #074b83;
+        }
+        .choice-card-img img {
+            width: 140px;
+            height: 140px;
+            object-fit: contain;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            background: #fff;
+        }
+        .choice-card-img .choice-label {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: #2d3436;
+        }
+
+        /* 投票完了アニメーション表示 */
+        .status-msg {
+            font-size: 1.6rem;
+            color: #00b894;
+            font-weight: 900;
+            margin: 40px 0;
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
+        }
+
+        /* 一括結果発表デザイン */
+        .all-results-container {
+            text-align: left;
+            margin-top: 20px;
+        }
+        .result-card {
+            background: #f1f2f6;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 8px solid #ff7675;
+        }
+        .result-card h3 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: #2d3436;
+            font-weight: 900;
+        }
+        .result-bars {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 160px;
+            border-bottom: 3px solid #b2bec3;
+            padding: 0 10px;
+            margin-top: 15px;
+        }
+        .result-bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            height: 100%;
+            justify-content: flex-end;
+        }
+        .result-bar {
+            width: 60px;
+            background-color: #fab1a0;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #2d3436;
+            font-weight: 900;
+            font-size: 1rem;
+            transition: height 0.6s ease-out;
+            min-height: 25px;
+        }
+        .bar-label {
+            margin-top: 10px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            text-align: center;
+            color: #2d3436;
+        }
+
+        /* 振り返り画面のスタイル */
+        .reflection-container {
+            padding: 20px 10px;
+            text-align: center;
+            animation: fadeIn 1.2s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* キラキラ背景＆カードスタイル */
+        .reflection-card {
+            background: linear-gradient(135deg, #ffeaa7, #fab1a0);
+            border-radius: 24px;
+            padding: 30px 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            color: #2d3436;
+            margin-bottom: 25px;
+            border: 4px solid #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .reflection-card h2 {
+            font-size: 1.8rem;
+            font-weight: 900;
+            margin-bottom: 15px;
+            color: #d63031;
+            text-shadow: 1px 1px 0px #fff;
+            line-height: 1.4;
+        }
+
+        /* 輝くテキストアニメーション */
+        .sparkle-text {
+            display: inline-block;
+            background: linear-gradient(45deg, #d63031, #e67e22, #0984e3, #d63031);
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: shine 3s linear infinite;
+        }
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        /* 背景にふわふわ浮かぶ星のキラキラエフェクト */
+        .star {
+            position: absolute;
+            color: #fff;
+            font-size: 1.2rem;
+            pointer-events: none;
+            animation: floatSparkle 2s infinite ease-in-out alternate;
+            opacity: 0.8;
+        }
+        .star1 { top: 10px; left: 15px; animation-delay: 0s; }
+        .star2 { top: 20px; right: 20px; animation-delay: 0.5s; }
+        .star3 { bottom: 15px; left: 25px; animation-delay: 1s; }
+        .star4 { bottom: 20px; right: 15px; animation-delay: 1.5s; }
+
+        @keyframes floatSparkle {
+            0% { transform: scale(0.8) rotate(0deg); opacity: 0.3; }
+            100% { transform: scale(1.3) rotate(20deg); opacity: 1; }
+        }
+
+        .intro-box {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.88);
+            padding: 22px 24px;
+            border-radius: 16px;
+            margin: 20px 0;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            border: 2px solid #ffeaa7;
+            box-shadow: 0 4px 15px rgba(255,234,167,0.5);
+        }
+        .intro-box p {
+            margin: 10px 0;
+            font-weight: 800;
+            color: #2d3436;
+        }
+
+        .controls {
+            margin-top: 25px;
+            text-align: center;
+        }
+        .btn-control {
+            padding: 16px 40px;
+            border: none;
+            border-radius: 16px;
+            background-color: #0984e3;
+            color: white;
+            cursor: pointer;
+            font-size: 1.3rem;
+            font-weight: 900;
+            box-shadow: 0 6px 0 #074b83;
+            transition: all 0.2s;
+        }
+        .btn-control:hover {
+            background-color: #74b9ff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #074b83;
+        }
+        .btn-control:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #074b83;
+        }
+
+        /* 管理用リセットボタン */
+        .admin-reset-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 0.8rem;
+            color: #b2bec3;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+        }
+        .admin-reset-btn:hover {
+            color: #d63031;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>みんなはどっち？</h1>
+        <div class="subtitle">〜 あなたの感覚を教えてね！ 〜</div>
+
+        <!-- 投票セクション -->
+        <div id="voting-section">
+            <div class="progress-indicator" id="progress-text">第 1 問 / 全 5 問</div>
+            <div class="question-box" id="question-text">お題を読み込んでいます...</div>
+            <div class="choices-grid" id="choices-container"></div>
+        </div>
+
+        <!-- 投票完了メッセージ -->
+        <div id="transition-section" style="display: none;">
+            <div class="status-msg">✨ 回答をうけつけました！ ✨</div>
+            <p style="font-size: 1.2rem; font-weight: 800; color: #636e72;">つぎの問題にすすむよ…</p>
+        </div>
+
+        <!-- 一気に結果発表セクション -->
+        <div id="all-results-section" style="display: none;">
+            <h2 style="color: #d63031; font-size: 1.8rem; font-weight: 900;">🎉 全結果発表！みんなの回答は…？ 🎉</h2>
+            <div class="all-results-container" id="all-results-list"></div>
+            <div class="controls">
+                <button class="btn-control" onclick="showReflection()">✨ 次へ進む</button>
+            </div>
+        </div>
+
+        <!-- 最後にふわーっと出てくる振り返り＆研究導入画面 -->
+        <div id="reflection-section" style="display: none;">
+            <div class="reflection-container">
+                <div class="reflection-card">
+                    <!-- キラキラ光る装飾の星 -->
+                    <span class="star star1">✦</span>
+                    <span class="star star2">✨</span>
+                    <span class="star star3">✨</span>
+                    <span class="star star4">✦</span>
+
+                    <h2>💭 やってみてどうだったかな？</h2>
+                    
+                    <div class="intro-box">
+                        <p>ほかの人の答えは自分とにていたかな？ちがっていたかな？</p>
+                        <p style="margin-top: 14px;">🌎 <strong>「ちがう国の人」の考え方ってどんな感じ？</strong></p>
+                        <p>🤝 <strong>ゲームで人と「協力」するとどうなる？</strong></p>
+                    </div>
+
+                    <p style="font-size: 1.4rem; font-weight: 900; margin-top: 20px; line-height: 1.5;">
+                        ✨ <span class="sparkle-text">さぁ、いまからパソコンゲームにちょうせんだ！</span> ✨
+                    </p>
+                </div>
+                <div class="controls">
+                    <button class="btn-control" onclick="restartQuiz()">つぎの人へ（回答を記録）</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- データリセットボタン（誤操作防止パスコード付き） -->
+        <button class="admin-reset-btn" onclick="resetAllData()">⚙️ リセット</button>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "おなかがすいたらどうする？",
+                choices: [
+                    { text: "ごはんをたべる", image: "https://raw.githubusercontent.com/natumi7230202-ai/images/main/%E3%81%9F%E3%81%B9%E3%82%8B.png" },
+                    { text: "とりあえず走ってみる", image: "https://raw.githubusercontent.com/natumi7230202-ai/images/main/%E3%81%AF%E3%81%97%E3%82%8B.png" }
+                ]
+            },
+            {
+                question: "友達が落とした100円玉を見つけた！あなただったらどうする？",
+                choices: [
+                    { text: "友達に返す", image: "https://raw.githubusercontent.com/natumi7230202-ai/images/main/%E3%81%8A%E9%87%91%E3%82%92%E6%B8%A1%E3%81%99.png" },
+                    { text: "自分のお財布に入れる", image: "https://raw.githubusercontent.com/natumi7230202-ai/images/main/%E3%81%95%E3%81%84%E3%81%B5.png" }
+                ]
+            },
+            {
+                question: "1週間どちらかで過ごさないといけない！",
+                choices: [
+                    { text: "語尾が全部「ニャー」になる", image: "https://raw.githubusercontent.com/natumi7230202-ai/images/main/%E3%81%8C%E3%82%93%E3%81%B0%E3%82%8A%E3%81%BE%E3%81%99%E3%83%8B%E3%83%A3.png" },
+                    { text: "歩くたびに効果音が鳴る", image: "https://raw.githubusercontent.com/natumi7230202-ai/images/main/%E5%8A%B9%E6%9E%9C%E9%9F%B3.png" }
+                ]
+            },
+            {
+                question: "明日から学校に乗っていくなら？",
+                choices: [
+                    { text: "巨大なカタツムリ", image: "https://raw.githubusercontent.com/natumi7230202-ai/images/main/%E3%81%8B%E3%81%9F%E3%81%A4%E3%82%80%E3%82%8A.png" },
+                    { text: "空飛ぶじゅうたん", image: "https://raw.githubusercontent.com/natumi7230202-ai/images/main/%E3%81%98%E3%82%85%E3%81%86%E3%81%9F%E3%82%93.png" }
+                ]
+            },
+            {
+                question: "タイムマシンを1回だけ使える！",
+                choices: [
+                    { text: "恐竜の時代に行く", image: "https://raw.githubusercontent.com/natumi7230202-ai/images/main/%E6%81%90%E7%AB%9C.png" },
+                    { text: "100年後の未来に行く", image: "https://raw.githubusercontent.com/natumi7230202-ai/images/main/%E8%BF%91%E6%9C%AA%E6%9D%A5%E9%83%BD%E5%B8%82.png" }
+                ]
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let accumulatedVotes = [];
+
+        // データをブラウザのストレージ（localStorage）から読み込む
+        function loadVotes() {
+            const savedData = localStorage.getItem('minna_dotchi_votes');
+            if (savedData) {
+                accumulatedVotes = JSON.parse(savedData);
+            } else {
+                // 初期データ作成（全問0票）
+                accumulatedVotes = questions.map(q => new Array(q.choices.length).fill(0));
+            }
+        }
+
+        // データをブラウザに保存する
+        function saveVotes() {
+            localStorage.setItem('minna_dotchi_votes', JSON.stringify(accumulatedVotes));
+        }
+
+        function initQuiz() {
+            loadVotes();
+            currentQuestionIndex = 0;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentQuestionIndex];
+
+            document.getElementById("progress-text").innerText = `第 ${currentQuestionIndex + 1} 問 / 全 ${questions.length} 問`;
+            document.getElementById("question-text").innerText = q.question;
+
+            const container = document.getElementById("choices-container");
+            container.innerHTML = "";
+
+            q.choices.forEach((choice, index) => {
+                const card = document.createElement("div");
+                card.className = "choice-card-img";
+                card.innerHTML = `
+                    <img src="${choice.image}" alt="${choice.text}" />
+                    <div class="choice-label">${choice.text}</div>
+                `;
+                card.onclick = () => vote(index);
+                container.appendChild(card);
+            });
+
+            document.getElementById("voting-section").style.display = "block";
+            document.getElementById("transition-section").style.display = "none";
+            document.getElementById("all-results-section").style.display = "none";
+            document.getElementById("reflection-section").style.display = "none";
+        }
+
+        function vote(choiceIndex) {
+            // 票数を加算して即座にストレージに保存
+            accumulatedVotes[currentQuestionIndex][choiceIndex]++;
+            saveVotes();
+
+            document.getElementById("voting-section").style.display = "none";
+            document.getElementById("transition-section").style.display = "block";
+
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    showQuestion();
+                } else {
+                    showAllResults();
+                }
+            }, 1000);
+        }
+
+        function showAllResults() {
+            document.getElementById("voting-section").style.display = "none";
+            document.getElementById("transition-section").style.display = "none";
+            
+            const resultsSection = document.getElementById("all-results-section");
+            const resultsList = document.getElementById("all-results-list");
+            resultsList.innerHTML = "";
+
+            questions.forEach((q, qIndex) => {
+                const votes = accumulatedVotes[qIndex];
+                const totalVotes = votes.reduce((a, b) => a + b, 0);
+                const maxVote = Math.max(...votes, 1);
+
+                let cardHtml = `
+                    <div class="result-card">
+                        <h3>第 ${qIndex + 1} 問：${q.question} <span style="font-size:0.9rem; color:#636e72;">(累計 ${totalVotes} 票)</span></h3>
+                        <div class="result-bars">
+                `;
+
+                q.choices.forEach((choice, cIndex) => {
+                    const count = votes[cIndex];
+                    const height = (count / maxVote) * 100 + 20;
+
+                    cardHtml += `
+                        <div class="result-bar-wrapper">
+                            <div class="result-bar" style="height: ${height}px; background-color: ${cIndex === 0 ? '#ff7675' : '#74b9ff'};">${count}票</div>
+                            <div class="bar-label">${choice.text}</div>
+                        </div>
+                    `;
+                });
+
+                cardHtml += `
+                        </div>
+                    </div>
+                `;
+                resultsList.innerHTML += cardHtml;
+            });
+
+            resultsSection.style.display = "block";
+        }
+
+        function showReflection() {
+            document.getElementById("all-results-section").style.display = "none";
+            document.getElementById("reflection-section").style.display = "block";
+        }
+
+        function restartQuiz() {
+            initQuiz();
+        }
+
+        // データをリセットする機能（誤操作防止パスコード付き）
+        function resetAllData() {
+            const passcode = prompt("累計データをリセットしますか？\nパスコードを入力してください（初期値: 1234）:");
+            if (passcode === "1234") {
+                localStorage.removeItem('minna_dotchi_votes');
+                alert("集計データをリセットしました。");
+                initQuiz();
+            } else if (passcode !== null) {
+                alert("パスコードが違います。");
+            }
+        }
+
+        window.onload = initQuiz;
+    </script>
+
+</body>
+</html>
